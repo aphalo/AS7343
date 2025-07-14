@@ -1,8 +1,8 @@
 #' Simulate spectral sensor response
 #'
 #' @param source.spct source_spct object Light source spectral irradiance.
-#' @param responce.spct or response.mspct Light sensor spectral responsiveness,
-#'   one or more channels.
+#' @param sensor.mspct responce_spct or response_mspct object Light sensor
+#'   spectral responsiveness, one or more channels.
 #' @param range numeric vector of length two Range of wavelengths to use
 #'   (nanometres, nm)
 #' @inheritParams photobiology::response
@@ -19,41 +19,63 @@
 #' simul_response(sun.spct, ccd.spct)
 #' simul_response(sun.spct, ccd.spct, unit.out = "photon")
 #'
+#' simul_AS7343(sun.spct, unit.out = "photon")
+#'
 simul_response <-
   function(source.spct,
            sensor.mspct,
            range = NULL,
            unit.out = getOption("photobiology.radiation.unit",
                                 default = "energy"),
-           quantity = "total",
            time.unit = NULL,
            scale.factor = 1) {
 
     if (!is.null(range)) {
       range <- range(range)
     }
-    if (is.response_spct(sensor.mspct)) {
-      sensor.mspct <- subset2mspct(sensor.mspct)
+    if (photobiology::is.response_spct(sensor.mspct)) {
+      sensor.mspct <- photobiology::subset2mspct(sensor.mspct)
     }
-    stopifnot("'source.spct' wrong class" = is.source_spct(source.spct))
-    stopifnot("'sensor.mspct' wrong class" = is.response_mspct(sensor.mspct))
-    source.spct <- trim_wl(source.spct, fill = 0)
-    sensor.mspct <- trim_wl(sensor.mspct, fill = 0)
+    stopifnot("'source.spct' wrong class" =
+                photobiology::is.source_spct(source.spct))
+    stopifnot("'sensor.mspct' wrong class" =
+                photobiology::is.response_mspct(sensor.mspct))
+    source.spct <- photobiology::trim_wl(source.spct, fill = 0)
+    sensor.mspct <- photobiology::trim_wl(sensor.mspct, fill = 0)
 
-    channel.responses.mspct <- response_mspct()
+    channel.responses.mspct <- photobiology::response_mspct()
 
     for (ch in names(sensor.mspct)) {
       channel.responses.mspct[[ch]] <- sensor.mspct[[ch]] * source.spct
     }
 
-    z <- response(spct = channel.responses.mspct,
-                  w.band = range,
-                  unit.out = unit.out,
-                  quantity = quantity,
-                  time.unit = time.unit,
-                  scale.factor = scale.factor)
+    z <-
+      photobiology::response(spct = channel.responses.mspct,
+                             w.band = range,
+                             unit.out = unit.out,
+                             quantity = "total",
+                             time.unit = time.unit,
+                             scale.factor = scale.factor)
 
-    what_measured(z) <- paste("illumination: ", what_measured(source.spct),
-                              "\nsensor: ", what_measured(sensor.mspct), sep = "")
+    photobiology::what_measured(z) <-
+      paste("illumination: ", photobiology::what_measured(source.spct),
+            "\nsensor: ", photobiology::what_measured(sensor.mspct), sep = "")
     z
   }
+
+#' @rdname simul_response
+#'
+#' @export
+#'
+simul_AS7343 <- function(source.spct,
+                         unit.out = getOption("photobiology.radiation.unit",
+                                              default = "energy"),
+                         time.unit = NULL,
+                         scale.factor = 1) {
+  simul_response(source.spct = source.spct,
+                 sensor.mspct = photobiologySensors::ams_AS7343.spct,
+                 range = range(source.spct),
+                 unit.out = unit.out,
+                 time.unit = time.unit,
+                 scale.factor = scale.factor)
+}

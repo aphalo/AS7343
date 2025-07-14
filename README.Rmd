@@ -18,14 +18,20 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of AS7343 is to ...
+The goal of AS7343 is to simulate the response of the AS7343 spectral sensor
+from asm OSRAM. Based on a light spectrum with high wavelength resolution
+simulate the response of each of the 13 channels of the AS7343 digital spectral
+sensor, or any other sensor. With the simulations of channels responses further
+analysis will attempt to retrieve quantities of interest such as PAR, ePAR, 
+UVA:PAR, R:FR and B:G ratios.
 
 ## Installation
 
-You can install the development version of AS7343 like so:
+You can install the development version of AS7343 with:
 
-``` r
-# FILL THIS IN! HOW CAN PEOPLE INSTALL YOUR DEV PACKAGE?
+```{r, eval=FALSE}
+remotes::install_github("aphalo/AS7343")
+packageVersion("AS7343")
 ```
 
 ## Example
@@ -34,7 +40,12 @@ This is a basic example which shows you how to solve a common problem:
 
 ```{r example}
 library(AS7343)
-## basic example code
+library(ggspectra)
+simul_response(sun.spct, ams_AS7343.spct, 
+               unit.out = "photon",
+               scale.factor = 1e-6) |>
+  ggplot(aes(spct.idx, .data[["R[/q]_Total"]])) +
+  geom_col()
 ```
 
 

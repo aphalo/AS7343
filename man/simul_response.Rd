@@ -2,6 +2,7 @@
 % Please edit documentation in R/simul-response.R
 \name{simul_response}
 \alias{simul_response}
+\alias{simul_AS7343}
 \title{Simulate spectral sensor response}
 \usage{
 simul_response(
@@ -9,7 +10,13 @@ simul_response(
   sensor.mspct,
   range = NULL,
   unit.out = getOption("photobiology.radiation.unit", default = "energy"),
-  quantity = "total",
+  time.unit = NULL,
+  scale.factor = 1
+)
+
+simul_AS7343(
+  source.spct,
+  unit.out = getOption("photobiology.radiation.unit", default = "energy"),
   time.unit = NULL,
   scale.factor = 1
 )
@@ -17,23 +24,19 @@ simul_response(
 \arguments{
 \item{source.spct}{source_spct object Light source spectral irradiance.}
 
+\item{sensor.mspct}{responce_spct or response_mspct object Light sensor
+spectral responsiveness, one or more channels.}
+
 \item{range}{numeric vector of length two Range of wavelengths to use
 (nanometres, nm)}
 
 \item{unit.out}{character Allowed values \code{"energy"}, and
 \code{"photon"}, or its alias \code{"quantum"}.}
 
-\item{quantity}{character string One of \code{"average"} or \code{"mean"},
-\code{"total"}, \code{"contribution"}, \code{"contribution.pc"},
-\code{"relative"} or \code{"relative.pc"}.}
-
 \item{time.unit}{character or lubridate::duration object.}
 
 \item{scale.factor}{numeric vector of length 1, or length equal to that of
 \code{w.band}. Numeric multiplier applied to returned values.}
-
-\item{responce.spct}{or response.mspct Light sensor spectral responsiveness,
-one or more channels.}
 }
 \description{
 Simulate spectral sensor response
@@ -48,5 +51,7 @@ for each sensor channel.
 simul_response(sun.spct, ams_AS7343.spct)
 simul_response(sun.spct, ccd.spct)
 simul_response(sun.spct, ccd.spct, unit.out = "photon")
+
+simul_AS7343(sun.spct, unit.out = "photon")
 
 }

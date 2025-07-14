@@ -17,14 +17,13 @@ License: GPL (>= 2)
 Depends: 
     photobiology (>= 0.13.1),
     photobiologySensors (> 0.5.1)
-Imports:
-    photobiologySun,
-    photobiologyLamps,
-    photobiologyLEDs,
-    ggspectra (>= 0.3.16)
 Encoding: UTF-8
 LazyData: true
 Suggests: 
+    photobiologySun,
+    photobiologyLamps,
+    photobiologyLEDs,
+    ggplot2,
     knitr,
     rmarkdown
 VignetteBuilder: knitr
