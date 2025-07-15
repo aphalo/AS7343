@@ -1,0 +1,167 @@
+---
+title: "Plant-Related Quantities"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Set up
+
+```{r setup}
+library(dplyr)
+library(photobiology)
+library(photobiologyWavebands)
+library(photobiologySensors)
+library(photobiologyPlants)
+library(photobiologySun)
+library(photobiologyLamps)
+library(ggspectra)
+library(AS7343)
+```
+
+```{r}
+photon_as_default()
+wavebands <- c(list(PAR("McCree"), PAR("ePAR")), Plant_bands("Sellaro"))
+```
+
+## AS7343 spectral response
+
+```{r}
+autoplot(ams_AS7343.spct)
+```
+
+## A single sunlight spectrum
+
+```{r}
+autoplot(sun.spct)
+```
+
+Compute irradiances
+
+```{r}
+irradiances.tb <-
+  q_irrad(sun.spct, 
+          wavebands, return.tb = TRUE)
+```
+
+Simulate the response of the sensor
+
+```{r}
+channels.tb <- simul_AS7343(sun.spct)
+ch.tb <- as.data.frame(t(channels.tb[ , -1]))
+colnames(ch.tb) <- channels.tb[[1]]
+ch.tb
+```
+
+```{r}
+all.data <- cbind(irradiances.tb, ch.tb)
+colnames(all.data)
+```
+
+The code above produces for one spectral observation data for the irradiances for different wavebands of interest and simulated channel-sensor responses for the AS7343. To find find a recipe that works in daylight, we need to repeat this computation for many different spectra and fit a model for each waveband irradiance against the sensor channel responses as explanatory variables. In principle, multiple linear regression could work. If we can use a huge number of spectra
+then machine learning could be attempted.
+
+To take into account the tolerances of the AS7343 specifications we would need
+to replace the deterministic typical response from the data sheet by a
+simulation that takes into consideration tolerances. However, guranteed
+specifications tend to be much looser than what actual components have, 
+especially from well known brands as ams OSRAM.
+
+## Multiple sunlight spectra
+
+We try a test with a small number of spectra.
+
+```{r}
+autoplot(sun_hourly_june.spct)
+```
+
+
+Compute irradiances
+
+```{r}
+irradiances.tb <-
+  q_irrad(sun_hourly_june.spct, 
+          wavebands, return.tb = TRUE)
+nrow(irradiances.tb)
+```
+
+```{r}
+sun_hourly_june.mspct <- subset2mspct(sun_hourly_june.spct)
+channels.ls <-list()
+spct.names <- names(sun_hourly_june.mspct)[1:54] 
+for (name in spct.names) {
+  temp.tb <-simul_AS7343(sun_hourly_june.mspct[[name]][ , 1:2])
+  channels.ls[[name]] <- temp.tb[[2]]
+}
+channels.tb <- as.data.frame(t(as.data.frame(channels.ls)))
+colnames(channels.tb) <- temp.tb[["spct.idx"]]
+channels.tb[["spct.idx"]] <- spct.names
+```
+
+```{r}
+colnames(irradiances.tb)
+colnames(channels.tb)
+all_data.tb <- right_join(irradiances.tb, channels.tb)
+```
+
+```{r}
+fm1 <- lm(Q_UVA1.CIE ~ F1 + F2 + F3 + F4 + F5 + F6 + F7 + F8, data = all_data.tb)
+anova(fm1)
+step(fm1)
+```
+
+### PAR
+
+```{r}
+fm2 <- lm(Q_PAR.McCree ~ VIS, data = all_data.tb)
+summary(fm2)
+step(fm2)
+```
+
+### UVA1
+
+```{r}
+fm3 <- lm(Q_UVA1.CIE ~ F1 + F2 + F3, data = all_data.tb)
+anova(fm3)
+fm3s <- step(fm3)
+summary(fm3s)
+```
+
+### Blue
+
+```{r}
+fm4 <- lm(Q_Blue.Sellaro ~ F2 + F3 + F4 + F5, data = all_data.tb)
+anova(fm4)
+fm4s <- step(fm4)
+summary(fm4s)
+```
+
+### Green
+
+```{r}
+fm5 <- lm(Q_Green.Sellaro ~ F4 + F5 + F6, data = all_data.tb)
+anova(fm5)
+fm5s <- step(fm5)
+summary(fm5s)
+```
+
+### Red
+
+```{r}
+fm6 <- lm(Q_Red.Sellaro ~ F6 + F7 + F8, data = all_data.tb)
+anova(fm6)
+fm6s <- step(fm6)
+summary(fm6s)
+```
+### Far Red
+
+```{r}
+fm7 <- lm(Q_FarRed.Sellaro ~ F7 + F8 + 0, data = all_data.tb)
+anova(fm7)
+fm7s <- step(fm7)
+summary(fm7s)
+```

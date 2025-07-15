@@ -5,3 +5,4 @@
 ^_pkgdown\.yml$
 ^\.\./docs/AS7343$
 ^pkgdown$
+^vignettes/articles$
