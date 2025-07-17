@@ -224,18 +224,11 @@ For sunlight the answer to both questions is: yes.
 In the case of UVA1, the centre wavelength of the nearest sensor channel is about 20 nm too long. Although $R^2$ remains very high there is more variation around the "calibration" line than for PAR or ePAR.
 
 ```{r}
-ggplot(all_data.tb, aes(Q_UVA1.CIE * 1e6, F1)) +
+ggplot(all_data.tb, aes(Q_UVA1.CIE / Q_PAR.McCree, F1 / VIS)) +
   geom_point() +
-  stat_poly_line(formula = y ~ x + 0, method = "sma") +
+  stat_poly_line(formula = y ~ x, method = "lm") +
   stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
-               formula = y ~ x + 0, method = "sma")
-```
-
-```{r}
-fm3 <- lm(Q_UVA1.CIE ~ F1 + F2 + F3, data = all_data.tb)
-anova(fm3)
-fm3s <- step(fm3)
-summary(fm3s)
+               formula = y ~ x, method = "lm")
 ```
 
 ### Blue
@@ -248,13 +241,6 @@ ggplot(all_data.tb, aes(Q_Blue.Sellaro * 1e6, F2)) +
                formula = y ~ x + 0, method = "sma")
 ```
 
-```{r}
-fm4 <- lm(Q_Blue.Sellaro ~ F2 + F3 + F4 + F5, data = all_data.tb)
-anova(fm4)
-fm4s <- step(fm4)
-summary(fm4s)
-```
-
 ### Green
 
 ```{r}
@@ -265,12 +251,14 @@ ggplot(all_data.tb, aes(Q_Green.Sellaro * 1e6, F5)) +
                formula = y ~ x + 0, method = "sma")
 ```
 
+### B:G photon ratio
 
 ```{r}
-fm5 <- lm(Q_Green.Sellaro ~ F4 + F5 + F6, data = all_data.tb)
-anova(fm5)
-fm5s <- step(fm5)
-summary(fm5s)
+ggplot(all_data.tb, aes(Q_Blue.Sellaro / Q_Green.Sellaro, F2 / F5)) +
+  geom_point() +
+  stat_poly_line(formula = y ~ x, method = "lm") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x, method = "lm")
 ```
 
 ### Red
@@ -283,13 +271,6 @@ ggplot(all_data.tb, aes(Q_Red.Sellaro * 1e6, F6)) +
                formula = y ~ x + 0, method = "sma")
 ```
 
-
-```{r}
-fm6 <- lm(Q_Red.Sellaro ~ F6 + F7 + F8, data = all_data.tb)
-anova(fm6)
-fm6s <- step(fm6)
-summary(fm6s)
-```
 ### Far Red
 
 ```{r}
@@ -300,10 +281,12 @@ ggplot(all_data.tb, aes(Q_FarRed.Sellaro * 1e6, F8)) +
                formula = y ~ x + 0, method = "sma")
 ```
 
+### R:FR photon ratio
 
 ```{r}
-fm7 <- lm(Q_FarRed.Sellaro ~ F7 + F8 + 0, data = all_data.tb)
-anova(fm7)
-fm7s <- step(fm7)
-summary(fm7s)
+ggplot(all_data.tb, aes(Q_Red.Sellaro / Q_FarRed.Sellaro, F6 / F8)) +
+  geom_point() +
+  stat_poly_line(formula = y ~ x, method = "lm") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x, method = "lm")
 ```
