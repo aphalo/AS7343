@@ -1,0 +1,301 @@
+---
+title: "Test with Ander's hourly spectra"
+author: "Pedro J. Aphalo"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Set up
+
+```{r packages}
+library(dplyr)
+library(photobiology)
+library(photobiologyWavebands)
+library(photobiologySensors)
+library(photobiologyPlants)
+library(photobiologySun)
+library(photobiologyLamps)
+library(ggspectra)
+library(ggpmisc)
+library(smatr)
+library(AS7343)
+```
+
+```{r}
+theme_set(theme_bw())
+photon_as_default()
+```
+
+## AS7343 spectral response
+
+The AS7343 sensor has 13 channels covering wavelengths in the range 370-900 nm. 
+
+```{r}
+ams_AS7343.mspct <- subset2mspct(ams_AS7343.spct)
+autoplot(ams_AS7343.mspct)
+```
+
+## Hourly sunlight spectra
+
+```{r}
+load("kumpula-all-hourly-mspct-anders-lindfors.rda")
+```
+
+With a list of `waveband` objects we can compute multiple irradiances by integrating the radiation spectrum over multiple ranges of wavelengths. 
+
+```{r}
+wavebands <- 
+  c(list(PAR("McCree"), PAR("ePAR")),
+    Plant_bands("Sellaro"),
+    list(Red("Smith20"), Far_red("Smith20")))
+```
+
+Compute irradiances
+
+```{r}
+irradiances.tb <-
+  q_irrad(all_hourly.mspct, 
+          wavebands, 
+          scale.factor = 1e6, # mol m-2 s-1 -> umol m-2 s-1
+          return.tb = TRUE)
+nrow(irradiances.tb)
+ncol(irradiances.tb)
+```
+
+```{r}
+channels.ls <-list()
+spct.names <- names(all_hourly.mspct)
+for (name in spct.names) {
+#  print(name)
+  temp.tb <-simul_AS7343(all_hourly.mspct[[name]][ , 1:2])
+  channels.ls[[name]] <- temp.tb[[2]]
+}
+channels.tb <- as.data.frame(t(as.data.frame(channels.ls)))
+colnames(channels.tb) <- temp.tb[["spct.idx"]]
+channels.tb[["spct.idx"]] <- spct.names
+```
+
+It is safer to join the irradiance and sensor response data matching rows by spectrum name than by position.
+
+```{r}
+colnames(irradiances.tb)
+colnames(channels.tb)
+all_data.tb <- right_join(irradiances.tb, channels.tb)
+```
+
+```{r}
+PfrPtot <- numeric()
+idx <- 0
+spct.names <- names(all_hourly.mspct)
+for (name in spct.names) {
+  idx <- idx + 1L
+#  print(name)
+  PfrPtot[idx] <- Pfr_Ptot(all_hourly.mspct[[name]][ , 1:2])
+}
+all_data.tb[["Pfr.Ptot"]] <- PfrPtot
+```
+
+```{r}
+save(all_data.tb, file = "all-hourly-summaries.rda")
+```
+
+
+### PAR
+
+The first question is: Is the VIS channel a good enough match to be used for PAR measurement in sunlight?
+
+```{r}
+ggplot(all_data.tb, aes(Q_PAR.McCree, VIS)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x + 0, method = "sma") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x + 0, method = "sma")
+```
+
+Would it also work for ePAR?
+
+```{r}
+ggplot(all_data.tb, aes(Q_ePAR, VIS)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x + 0, method = "sma") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x + 0, method = "sma")
+```
+
+For sunlight the answer to both questions is: yes.
+
+### UVA1
+
+In the case of UVA1, the centre wavelength of the nearest sensor channel is about 20 nm too long. Although $R^2$ remains very high there is more variation around the "calibration" line than for PAR or ePAR.
+
+
+```{r}
+ggplot(all_data.tb, aes(Q_UVA1.CIE, F1)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x, method = "sma") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x, method = "sma",
+               size = 2.7)
+```
+
+### UVA1:PAR photon ratio
+
+```{r}
+ggplot(all_data.tb, aes(Q_UVA1.CIE / Q_PAR.McCree, F1 / VIS)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x, method = "sma") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x, method = "sma",
+               size = 2.7)
+```
+
+### Blue
+
+```{r}
+ggplot(all_data.tb, aes(Q_Blue.Sellaro, F2)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x + 0, method = "sma") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x + 0, method = "sma")
+```
+
+### Green
+
+```{r}
+ggplot(all_data.tb, aes(Q_Green.Sellaro, F5)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x + 0, method = "sma") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x + 0, method = "sma")
+```
+
+### B:G photon ratio
+
+```{r}
+ggplot(all_data.tb, aes(Q_Blue.Sellaro / Q_Green.Sellaro, 
+                        F2 / F5)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x, method = "lm") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x, method = "lm",
+               size = 2.7)
+```
+
+### Red
+
+```{r}
+ggplot(all_data.tb, aes(Q_Red.Sellaro, F6)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x + 0, method = "sma") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x + 0, method = "sma")
+```
+
+```{r}
+ggplot(all_data.tb, aes(Q_Red.Smith20, F6)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x + 0, method = "sma") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x + 0, method = "sma")
+```
+
+### Far Red
+
+```{r}
+ggplot(all_data.tb, aes(Q_FarRed.Sellaro, F8)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x + 0, method = "sma") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x + 0, method = "sma")
+```
+
+```{r}
+ggplot(all_data.tb, aes(Q_FarRed.Smith20, F8)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x + 0, method = "sma") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x + 0, method = "sma")
+```
+
+### R:FR photon ratio
+
+```{r}
+ggplot(all_data.tb, aes(Q_Red.Sellaro / Q_FarRed.Sellaro, F6 / F8)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x + I(x^2), method = "lm") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x + I(x^2), method = "lm",
+               size = 2.7)
+```
+
+
+```{r}
+ggplot(all_data.tb, aes(Q_Red.Smith20 / Q_FarRed.Smith20, F6 / F8)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x, method = "lm") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x, method = "lm",
+               size = 2.7)
+```
+
+Although the estimates of red and far-red irradiances seem good, the estimates of the R:FR photon ratio based on single channels are not as good. While the broader bands of "Sellaro" seem to provide some information those based on "Smith20" are of not use.
+This raises the question of how different are the R:FR ratios computed using these two different definitions. As the figure below shows they are far from equivalent in sunlight!
+
+```{r}
+ggplot(all_data.tb, aes(Q_Red.Sellaro / Q_FarRed.Sellaro, 
+                        Q_Red.Smith20 / Q_FarRed.Smith20)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x + I(x^2), method = "lm") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x + I(x^2), method = "lm",
+               size = 2.7)
+```
+
+The range of meaningful values for R:FR in sunlight is narrow and consequently small errors in the quantification of R and/or FR irradiance result in R:FR errors that can be thought as important for plant responses. Possibly, more important, is that the R:FR photon ratio measured based on different waveband definitions is not consistent in sunlight.
+
+The choice of wavebands is rather arbitrary as the Pfr:Ptot fraction depends on a broad range of wavelengths and different wavelengths affect it with different weights.
+
+### Pfr:Ptot
+
+```{r}
+ggplot(all_data.tb, aes(Pfr.Ptot, 
+                        Q_Red.Smith20 / Q_FarRed.Smith20)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x + I(x^2), method = "lm") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x + I(x^2), method = "lm")
+```
+
+```{r, warning=FALSE}
+ggplot(all_data.tb, aes(Pfr.Ptot,
+                        Q_Red.Sellaro / Q_FarRed.Sellaro)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x + I(x^2), method = "lm") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x + I(x^2), method = "lm")
+```
+
+The R:FR ratio based on "Sellaro" definitions describes much better the expected relationship between the **expected** _in vitro_ photoequilibrium of phytochrome _in sunlight_. As seen below, similarly to the R:FR ratio computed using this defintion, the **expected** _in vitro_ photoequilibrium of phytochrome results in a possibly useful relationship to two channels in the AS7343.
+
+```{r}
+ggplot(all_data.tb, aes(Pfr.Ptot, F6 / F8)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x + I(x^2), method = "lm") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x + I(x^2), method = "lm",
+               size = 2.7)
+```
+
+```{r}
+ggplot(all_data.tb, aes(Pfr.Ptot, F6 / F8)) +
+  geom_point(alpha = 0.05) +
+  stat_poly_line(formula = y ~ x, method = "lm") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x, method = "lm",
+               size = 2.7)
+```
+

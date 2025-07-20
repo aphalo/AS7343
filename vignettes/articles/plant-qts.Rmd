@@ -1,5 +1,7 @@
 ---
 title: "Plant-Related Quantities"
+subtitle: "Simulated AS7343 calibrations for sunlight"
+author: "Pedro J. Aphalo"
 ---
 
 ```{r, include = FALSE}
@@ -63,6 +65,8 @@ If we consider the wavelength bands important for plants, VIS matches well ePAR,
 
 ## A single sunlight spectrum
 
+A single spectrum computed with a radiation transfer model.
+
 ```{r}
 autoplot(sun.spct, annotations = c("+", "title:where:when:what"))
 ```
@@ -71,7 +75,9 @@ With a list of `waveband` objects we can compute multiple irradiances by integra
 
 ```{r}
 wavebands <- 
-  c(list(PAR("McCree"), PAR("ePAR")), Plant_bands("Sellaro"))
+  c(list(PAR("McCree"), PAR("ePAR")),
+    Plant_bands("Sellaro"),
+    list(Red("Smith20"), Far_red("Smith20")))
 ```
 
 Compute irradiances
@@ -117,6 +123,9 @@ specifications tend to be much looser than what actual components have,
 especially from well known brands as ams OSRAM.
 
 ## Multiple sunlight spectra
+
+Multiple spectra computed with a radiation transfer model and available in
+R package 'photobiologySun'.
 
 A first calibration attempt in daylight use close to 80 spectra for the latitude of Helsinki simulated through the day course for a few days in June and August. The simulations include the effects of clouds and aerosols in the atmosphere. Using a collection of spectra is easier and faster to we convert the data, The wavelength range ranges up to 800 nm so the NIR channel cannot be included in the analysis.
 
@@ -166,7 +175,7 @@ As function `simul_AS7343()` is not yet vectorised, a `for` loop is needed to "w
 channels.ls <-list()
 spct.names <- names(test.mspct)
 for (name in spct.names) {
-  print(name)
+#  print(name)
   temp.tb <-simul_AS7343(test.mspct[[name]][ , 1:2])
   channels.ls[[name]] <- temp.tb[[2]]
 }
@@ -223,6 +232,17 @@ For sunlight the answer to both questions is: yes.
 
 In the case of UVA1, the centre wavelength of the nearest sensor channel is about 20 nm too long. Although $R^2$ remains very high there is more variation around the "calibration" line than for PAR or ePAR.
 
+
+```{r}
+ggplot(all_data.tb, aes(Q_UVA1.CIE, F1)) +
+  geom_point() +
+  stat_poly_line(formula = y ~ x, method = "lm") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x, method = "lm")
+```
+
+### UVA1:PAR photon ratio
+
 ```{r}
 ggplot(all_data.tb, aes(Q_UVA1.CIE / Q_PAR.McCree, F1 / VIS)) +
   geom_point() +
@@ -271,6 +291,14 @@ ggplot(all_data.tb, aes(Q_Red.Sellaro * 1e6, F6)) +
                formula = y ~ x + 0, method = "sma")
 ```
 
+```{r}
+ggplot(all_data.tb, aes(Q_Red.Smith20 * 1e6, F6)) +
+  geom_point() +
+  stat_poly_line(formula = y ~ x + 0, method = "sma") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x + 0, method = "sma")
+```
+
 ### Far Red
 
 ```{r}
@@ -281,10 +309,86 @@ ggplot(all_data.tb, aes(Q_FarRed.Sellaro * 1e6, F8)) +
                formula = y ~ x + 0, method = "sma")
 ```
 
+```{r}
+ggplot(all_data.tb, aes(Q_FarRed.Smith20 * 1e6, F8)) +
+  geom_point() +
+  stat_poly_line(formula = y ~ x + 0, method = "sma") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x + 0, method = "sma")
+```
+
 ### R:FR photon ratio
 
 ```{r}
 ggplot(all_data.tb, aes(Q_Red.Sellaro / Q_FarRed.Sellaro, F6 / F8)) +
+  geom_point() +
+  stat_poly_line(formula = y ~ x, method = "lm") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x, method = "lm")
+```
+
+
+```{r}
+ggplot(all_data.tb, aes(Q_Red.Smith20 / Q_FarRed.Smith20, F6 / F8)) +
+  geom_point() +
+  stat_poly_line(formula = y ~ x, method = "lm") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x, method = "lm")
+```
+
+Although the estimates of red and far-red irradiances seem good, the estimates of the R:FR photon ratio based on single channels are not as good. While the broader bands of "Sellaro" seem to provide some information those based on "Smith20" are of not use.
+This raises the question of how different are the R:FR ratios computed using these two different definitions. As the figure below shows they are far from equivalent in sunlight!
+
+```{r}
+ggplot(all_data.tb, aes(Q_Red.Sellaro / Q_FarRed.Sellaro, 
+                        Q_Red.Smith20 / Q_FarRed.Smith20)) +
+  geom_point() +
+  stat_poly_line(formula = y ~ x, method = "lm") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x, method = "lm")
+```
+
+The range of meaningful values for R:FR in sunlight is narrow and consequently small errors in the quantification of R and/or FR irradiance result in R:FR errors that can be thought as important for plant responses. Possibly, more important, is that the R:FR photon ratio measured based on different waveband definitions is not consistent in sunlight.
+
+The choice of wavebands is rather arbitrary as the Pfr:Ptot fraction depends on a broad range of wavelengths and different wavelengths affect it with different weights.
+
+### Pfr:Ptot
+
+```{r}
+spct.names <- names(test.mspct)
+PfrPtot <- numeric()
+idx <- 0
+for (name in spct.names) {
+  idx <- idx + 1L
+#  print(name)
+  PfrPtot[idx] <- Pfr_Ptot(test.mspct[[name]][ , 1:2])
+}
+all_data.tb[["Pfr.Ptot"]] <- PfrPtot
+```
+
+
+```{r}
+ggplot(all_data.tb, aes(Pfr.Ptot, 
+                        Q_Red.Smith20 / Q_FarRed.Smith20)) +
+  geom_point() +
+  stat_poly_line(formula = y ~ x, method = "lm") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x, method = "lm")
+```
+
+```{r}
+ggplot(all_data.tb, aes(Pfr.Ptot,
+                        Q_Red.Sellaro / Q_FarRed.Sellaro)) +
+  geom_point() +
+  stat_poly_line(formula = y ~ x, method = "lm") +
+  stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
+               formula = y ~ x, method = "lm")
+```
+
+The R:FR ratio based on "Sellaro" definitions describes much better the expected relationship between sunlight and the **expected** _in vitro_ photoequilibrium of phytochrome under sunlight. As seen below, similarly to the R:FR ratio computed using this defintion, the **expected** _in vitro_ photoequilibrium of phytochrome results in a possibly useful relationship to two channels in the AS7343.
+
+```{r}
+ggplot(all_data.tb, aes(PfrPtot, F6 / F8)) +
   geom_point() +
   stat_poly_line(formula = y ~ x, method = "lm") +
   stat_poly_eq(use_label("eq", "R2", "n", "AIC"),
