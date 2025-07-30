@@ -41,9 +41,19 @@ autoplot(ams_AS7343.mspct)
 
 ## Hourly sunlight spectra
 
-```{r}
+```{r, eval = FALSE}
 load("kumpula-all-hourly-mspct-anders-lindfors.rda")
+test.mspct <- all_hourly.mspct
 ```
+
+## Assorted greenhouse spectra
+
+```{r, eval = FALSE}
+load("greenhouse-mspct.rda")
+test.mspct <- greenhouse.mspct
+```
+
+## Simulated calibration
 
 With a list of `waveband` objects we can compute multiple irradiances by integrating the radiation spectrum over multiple ranges of wavelengths. 
 
@@ -58,7 +68,7 @@ Compute irradiances
 
 ```{r}
 irradiances.tb <-
-  q_irrad(all_hourly.mspct, 
+  q_irrad(test.mspct, 
           wavebands, 
           scale.factor = 1e6, # mol m-2 s-1 -> umol m-2 s-1
           return.tb = TRUE)
@@ -68,10 +78,10 @@ ncol(irradiances.tb)
 
 ```{r}
 channels.ls <-list()
-spct.names <- names(all_hourly.mspct)
+spct.names <- names(test.mspct)
 for (name in spct.names) {
 #  print(name)
-  temp.tb <-simul_AS7343(all_hourly.mspct[[name]][ , 1:2])
+  temp.tb <-simul_AS7343(test.mspct[[name]][ , 1:2])
   channels.ls[[name]] <- temp.tb[[2]]
 }
 channels.tb <- as.data.frame(t(as.data.frame(channels.ls)))
@@ -90,11 +100,11 @@ all_data.tb <- right_join(irradiances.tb, channels.tb)
 ```{r}
 PfrPtot <- numeric()
 idx <- 0
-spct.names <- names(all_hourly.mspct)
+spct.names <- names(test.mspct)
 for (name in spct.names) {
   idx <- idx + 1L
 #  print(name)
-  PfrPtot[idx] <- Pfr_Ptot(all_hourly.mspct[[name]][ , 1:2])
+  PfrPtot[idx] <- Pfr_Ptot(test.mspct[[name]][ , 1:2])
 }
 all_data.tb[["Pfr.Ptot"]] <- PfrPtot
 ```

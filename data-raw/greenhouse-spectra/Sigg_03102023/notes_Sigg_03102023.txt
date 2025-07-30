@@ -1,0 +1,5 @@
+"Control" measurements are under LEDs with no far-red.
+"fr" measurements are under LEDs with far-red.
+"up" is a measurement on the tomato top canopy level.
+"bottom" is a measurement on the tomato bottom canopy level (approximately where the fruits are).
+"out" is outside the greenhouse.

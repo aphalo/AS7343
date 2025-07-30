@@ -1,0 +1,3 @@
+"C" measurements are under LEDs with no far-red.
+"FR" measurements are under LEDs with far-red.
+All measurements are under the LEDs, top canopy. Energy screens were on, hence no sunlight (not that there would have been any, considering time of year and day).

@@ -1,0 +1,5 @@
+"hpsjaledpaalla2_ledinalla" in a greenhouse with both HPS and LED lights on, sun too, under the LED luminaire.
+"hpsjaledpaalla3_hpsalla" in a greenhouse with both HPS and LED lights on, sun too, under the HPS luminaire.
+"hpsjaledpaalla4_lamppujenvalissa" in a greenhouse with both HPS and LED lights on, sun too, between the HPS and LED luminaires.
+"valotpois" in the same greenhouse, but all lights off.
+"valotpois_verhopaalla2" in the same greenhouse, all lights off and the shade screen on.

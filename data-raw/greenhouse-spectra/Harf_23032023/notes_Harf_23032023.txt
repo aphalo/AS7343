@@ -1,0 +1,5 @@
+"hybrid_house2_2" from a greenhouse with every other luminaire HPS and every other LED (Philips), measured between HPS and LED.
+"hybrid_house4_1" from a greenhouse with every other luminaire HPS and every other LED (Philips), measured under HPS.
+"hybrid_house4_2" from a greenhouse with every other luminaire HPS and every other LED (Philips), measured under LED.
+"hybrid5_chinaandtop" from a greenhouse with "chinese" LEDs as top and as interlights.
+"sunwithscreen" is from the same greenhouse as previous, but LEDs switched off and the shade screen on.
