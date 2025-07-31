@@ -2,7 +2,7 @@ Package: AS7343
 Type: Package
 Title: Simulate AS7343 Response
 Version: 0.1.0
-Date: 2025-07-14
+Date: 2025-07-31
 Authors@R: c(
     person(
       "Pedro", "Aphalo",
@@ -15,11 +15,13 @@ Description: Simulate the response of the AS7343 spectral sensor from asm OSRAM.
     response of each of the 13 channels of the AS7343 digital spectral sensor.
 License: GPL (>= 2)
 Depends: 
-    photobiology (>= 0.13.1),
-    photobiologySensors (> 0.5.1)
+    R (>= 4.0.0),
+    photobiology (>= 0.13.2)
 Encoding: UTF-8
-LazyData: true
-Suggests: 
+LazyLoad: true
+Imports:
+    photobiologySensors (> 0.5.1)
+Suggests:
     photobiologySun,
     photobiologyLamps,
     photobiologyLEDs,

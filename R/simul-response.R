@@ -14,7 +14,10 @@
 #'
 #' @export
 #'
+#' @import photobiology
+#'
 #' @examples
+#' library(photobiologySensors)
 #' simul_response(sun.spct, ams_AS7343.spct)
 #' simul_response(sun.spct, ccd.spct)
 #' simul_response(sun.spct, ccd.spct, unit.out = "photon")

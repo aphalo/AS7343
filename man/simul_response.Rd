@@ -48,6 +48,7 @@ of a sensor with one or more channels. Return the integral over wavelengths
 for each sensor channel.
 }
 \examples{
+library(photobiologySensors)
 simul_response(sun.spct, ams_AS7343.spct)
 simul_response(sun.spct, ccd.spct)
 simul_response(sun.spct, ccd.spct, unit.out = "photon")
