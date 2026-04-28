@@ -2,7 +2,7 @@
 # rYoctoPuceInOut 0.0.2
 
 Improve naming. Support as many YoctoPuce USB modules as possible with each 
-function. Move function of wider usefulness to 'photobiology'. 
+the same function. Move functions of wider usefulness to 'photobiology'. 
 
 _The interface is taking shape, but possibly subject to both minor and minor
 changes in the near future._

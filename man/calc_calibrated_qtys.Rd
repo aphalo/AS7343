@@ -14,21 +14,22 @@ calc_calibrated_qtys(x, calibrations, save.calibrations = TRUE)
 or function definitions.}
 
 \item{save.calibrations}{logical Flag indicating if the calibration object
-is to be stored as an arribute in the returned object.}
+is to be stored as an attribute in the returned object.}
 }
 \value{
 A data frame with column \code{"time"} with the times from
 \code{x$time} and one column of calibrated data for each primary branch in
-\code{calibrations}. The \code{calibrations} object is stored as attribute
-\code{"yocto.module.calibrations"} together with those attributes supported
-by the R for photobiology suite or comment present in \code{x}.
+in the tree-like list object \code{calibrations}. The \code{calibrations}
+object is stored as attribute \code{"yocto.module.calibrations"} together
+with those attributes supported by the R for photobiology suite or comment
+present in \code{x}.
 }
 \description{
 Compute derived quantities from data logged by a YoctoPuce USB module.
 }
 \details{
 Function \code{calc_calibrated_qtys()} computes derived quantities
-from data logged by YoctoPuce USB module previously and imported into R by
+from data logged by a YoctoPuce USB module previously imported into R by
 means of function \code{\link{read_yocto_datalog}()} or
 function \code{read_yocto_spctlog()}.
 
@@ -45,14 +46,14 @@ in the calibration object instead of \code{numeric} values. In this case
 the \code{function} definitions can replace one of more of the
 \code{numeric} values, allowing more complex conversion computations than a
 simple multiplication factor. These functions should accept as input a
-single \code{numeric} vector, i.e., the raw values data in one column of
-\code{x}, i.e., data acquired from a single sensor channel and return a
-numeric vector of calibrated values. In this case, as when using
-\code{numeric} multipliers, the values computed from different channels for
-a single output are added up.
+single \code{numeric} vector, i.e., the raw data values in one column of
+\code{x}, i.e., data acquired from a single sensor channel and should
+return a numeric vector of calibrated values of the same length. In this
+case, as when using \code{numeric} multipliers, the values computed from
+different channels for a single output are added up.
 
 A final variation is a calibration based on a single function that accepts
-as input data frame \code{x} in whole and returns a vector of calibrated
+as input a data frame \code{x} in whole and returns a vector of calibrated
 values of the same length as rows in \code{x}. This approach is the most
 flexible and is agnostic about the class of the data in \code{x} columns or
 returned values, i.e., can apply transformations to non-numeric data.
@@ -63,7 +64,8 @@ using the most suitable/convenient approach for the computation of each
 derived quantity.
 
 The number of quantities in the returned data frame and their names are
-determined by the named values stored in \code{calibrations}.
+determined by the named values stored in the list object
+\code{calibrations}.
 
 Functions \code{read_yocto_datalog()} and
 \code{read_yocto_spctlog()} store metadata as attributes in the data

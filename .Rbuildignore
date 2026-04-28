@@ -9,3 +9,5 @@
 ^pkgdown$
 ^vignettes/articles$
 ^\.github$
+^\.positai$
+^\.claude$
